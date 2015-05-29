@@ -7,15 +7,15 @@ permalink:        pretty
 relative_permalinks: true
 
 # Setup
-title:            Hyde
-tagline:          'A Jekyll theme'
-description:      'A brazen two-column <a href="http://jekyllrb.com" target="_blank">Jekyll</a> theme that pairs a prominent sidebar with uncomplicated content. Made by <a href="https://twitter.com/mdo" target="_blank">@mdo</a>.'
-url:              http://hyde.getpoole.com
+title:            ThinkData
+tagline:          'All things data'
+description:      'Data Science'
+url:              http://thinkdata.be
 baseurl:          /
-
+logo :            http://static.tumblr.com/442182ab6d03cbbc9bee606ced985d94/oszfyit/CaCmhskd7/tumblr_static_logo.png
 author:
-  name:           'Mark Otto'
-  url:            https://twitter.com/mdo
+  name:           'Kenny Helsens'
+  url:            https://twitter.com/kennyhelsens
 
 paginate:         5
 
@@ -23,4 +23,8 @@ paginate:         5
 version:          2.1.0
 
 github:
-  repo:           https://github.com/poole/hyde
+  repo:           https://github.com/kennyhelsens
+
+url:
+  linkedin:       https://www.linkedin.com/profile/view?id=17990438
+  twitter:        https://twitter.com/kennyhelsens
