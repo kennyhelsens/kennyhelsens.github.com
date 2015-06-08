@@ -1,0 +1,216 @@
+---
+title: "Hands on deep learning with h2o (part 1)"
+output: md_document
+---
+
+I have been wondering what all the noise about deep learning is about. Its still neural networks, right? I have had not so much experience with NN because they're supposed to be hard to get right due to paramater tuning, which is a downer if you're used to good alround performers like random forests. Still I decided to set out on a series of blogposts using h2o (R) and deeplearning4j (R) on biotech datasets. 
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+# setting up the environment
+require(data.table)
+require(magrittr)
+require(dplyr)
+require(showtext)
+require(ggplot2)
+require(randomForest)
+
+knitr::opts_chunk$set(fig.width=7,
+                      fig.height=4,
+                      # dev="CairoPNG", 
+                      fig.showtext=TRUE,
+                      dpi = 100,
+                      echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+
+```{r}
+params <- list()
+
+params$family <- "Raleway"
+font.add(params$family, regular = "Raleway-Regular.ttf")
+par(family=params$family)
+
+(theme_bw() + theme(text = element_text(family = params$family))) %>% 
+  theme_set
+```
+
+
+We'll be working with the BreastCancer dataset from the mlbench package. From the package description:
+
+>The objective is to identify each of a number of benign or malignant classes. Samples arrive periodically as Dr. Wolberg reports his clinical cases. The database therefore reflects this chronological grouping of the data. This grouping information appears immediately below, having been removed from the data itself. Each variable except for the first was converted into 11 primitive numerical attributes with values ranging from 0 through 10. There are 16 missing attribute values. See cited below for more details.
+
+
+```{r echo=TRUE}
+data("BreastCancer", package = "mlbench")
+str(BreastCancer)
+```
+
+
+
+Let's do some data munging.
+
+```{r echo=TRUE}
+BreastCancer %<>% as.data.table
+# remove NA values for simplicity
+BreastCancer %<>% na.omit
+
+y <- BreastCancer$Class %>% as.character() %>% as.factor
+x <- BreastCancer %>% select(2:(NCOL(.)-1))
+
+
+# get all nominal values as numeric
+x <- apply(x, 2, as.numeric) %>% data.table
+
+```
+
+Prepare test/training splits.
+```{r echo=TRUE}
+# split the data in test/train
+set.seed(10000)
+splits <- 
+  sample(x = c("train","test"),
+         size = NROW(x),
+         replace = T,
+         prob = c(0.7,0.3))
+features <- split(x, splits)
+response <- split(y, splits)
+```
+
+## As a reference, how good does it get with minimum effort using random forest classification?
+
+```{r echo=TRUE}
+rf <- randomForest(x = features$train,
+                   y = as.factor(response$train),
+                   xtest = features$test,
+                   ytest = response$test,
+                   keep.forest = TRUE,
+                   proximity = TRUE)
+rf
+```
+
+Test set error rate is at 2.31% without a lot of effort. There is not a lot of room for improvement. (So maybe this is not the best dataset.) The nice thing about randomforests is that they're self explanatory.
+
+```{r echo=TRUE}
+varImpPlot(rf)
+```
+
+Demostrates as expected that cell size and shape are most predictive features for the breast cancer classifier. We can inspect per feature decision surfaces, as plotted below where malignmant weight increases with higher value of cell size. 
+
+```{r echo=TRUE}
+randomForest::partialPlot(rf, features$train, "Cell.size", main = "", which.class = "malignant")
+```
+
+
+## So how good does it get using h2o deeplearning without much finetuning?
+
+Before this analysis, I had already setup the h2o R package. Instructions for running h2o are nicely summarized [here](http://tjo-en.hatenablog.com/entry/2015/02/15/194003). So I can
+now simply fire up a local instance for testing with the following
+command.
+
+```{r echo = TRUE}
+require(h2o)
+instance <- h2o.init()
+```
+
+Lets load the training and test data into h2o.
+```{r echo=TRUE}
+h2orefs <- list()
+h2orefs$train <- as.h2o(instance, cbind(features$train, Class=response$train))
+h2orefs$test <- as.h2o(instance, cbind(features$test, Class=response$test))
+```
+
+And lets build a model with default parameters. With h2o, you have to specify predictor and response variables by column index or by column name. Here, we are using column names.
+
+```{r echo=TRUE}
+h2orefs$model <-
+  h2o.deeplearning(x = features$train %>% colnames,
+                 y = "Class", 
+                 data = h2orefs$train,
+                 validation = h2orefs$test,
+                 classification = TRUE)
+
+h2orefs$model
+```
+
+Clearly better than the RF, out of the box without many finetuning. The overall error rate dropped to 1.38%, but more importantly the sensitivity detecting malignant cases went up to 100%. 
+
+Lets try and turn some knobs and evaluate what happens.
+
+### Adding more layers and neurons
+```{r echo=TRUE}
+h2orefs$model <-
+  h2o.deeplearning(x = features$train %>% colnames,
+                 y = "Class", 
+                 data = h2orefs$train,
+                 validation = h2orefs$test,
+                 classification = TRUE, 
+                 hidden = c(1000, 500, 300))
+h2orefs$model
+```
+
+Not much effect here.
+
+### Decrease the number of neurons, and add some regularization
+```{r echo=TRUE}
+h2orefs$model <-
+  h2o.deeplearning(x = features$train %>% colnames,
+                 y = "Class", 
+                 data = h2orefs$train,
+                 validation = h2orefs$test,
+                 classification = TRUE, 
+                 hidden = c(10, 20, 30),
+                 input_dropout_ratio = 0.3,
+                 hidden_dropout_ratios = c(0.3,0.3,0.3),
+                 epochs = 50,
+                 l1 = 0.0005,
+                 l2 = 0.0005)
+h2orefs$model
+```
+
+Not much effect. It would be interesting to whether the false positives evolved into malignant tissue after the data was collected for this study. 
+
+
+Now lets have a look at the variable importance derived from the DL classifier.
+
+```{r echo=TRUE}
+h2orefs$model <-
+  h2o.deeplearning(x = features$train %>% colnames,
+                 y = "Class", 
+                 data = h2orefs$train,
+                 validation = h2orefs$test,
+                 classification = TRUE,
+                 variable_importances = TRUE)
+
+
+varimp<-
+  t(data.frame(h2orefs$model@model$varimp)) %>%
+  data.table(feature = rownames(.), importance = .[,1]) %>%
+  arrange(importance)
+
+varimp$feature %<>%
+  factor(., levels = unique(.))
+
+```
+
+
+So while cell shape was determining the RF a lot, its of minor importance in the DL model. And while the mitoses did not contribute at all to the RF, it has a lot of importance in the DL model. 
+
+```{r echo=TRUE}
+p <- ggplot(data = varimp, aes(x = feature, y = importance))
+p <- p + geom_bar(stat = "identity")
+p <- p + coord_flip()
+p
+
+```
+
+
+So while cell shape was determining the RF a lot, its of minor
+importance in the DL model. And while the mitoses did not contribute at
+all to the RF, it has a lot of importance in the DL model. Actually all of the features seem to be used by the DL model, so it is making better use of all available information?
+
+
+
+
+
