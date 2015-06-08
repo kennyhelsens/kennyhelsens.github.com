@@ -102,7 +102,7 @@ One of the nice things about randomforests is that they're easy to understand by
 varImpPlot(rf)
 {% endhighlight %}
 
-![](assets/2015-06-04-hands-on-h2o-deeplearning_files/figure-markdown_strict/unnamed-chunk-6-1.png)
+![](/assets/2015-06-04-hands-on-h2o-deeplearning_files/figure-markdown_strict/unnamed-chunk-6-1.png)
 
 Demonstrates as expected that cell size and shape are most predictive
 features for the breast cancer RF classifier. We can inspect per feature
@@ -118,7 +118,7 @@ randomForest::partialPlot(
   which.class = "malignant")
 {% endhighlight %}
 
-![](assets/2015-06-04-hands-on-h2o-deeplearning_files/figure-markdown_strict/unnamed-chunk-7-1.png)
+![](/assets/2015-06-04-hands-on-h2o-deeplearning_files/figure-markdown_strict/unnamed-chunk-7-1.png)
 
 
 
