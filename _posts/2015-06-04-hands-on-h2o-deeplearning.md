@@ -1,6 +1,9 @@
 ---
 layout: post
 title: Testing randomForest and  H2O deep learning
+tags:
+- h2o
+- R
 ---
 
 
