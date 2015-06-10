@@ -23,5 +23,6 @@ Today, I want to focus again on projects in biology/biotech/life-science. I feel
 * [LinkedIn](https://www.linkedin.com/profile/view?id=17990438)
 * [CV](https://drive.google.com/file/d/0B4A88XTMCzhKWE1WZHhUTllZM0k/view?usp=sharing)
 
+This blog is being shared on [R-bloggers](http://www.r-bloggers.com/)
 
 [Lets get in touch!](mailto:kenny@thinkdata.be)
