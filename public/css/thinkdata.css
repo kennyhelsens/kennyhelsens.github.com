@@ -1,3 +1,9 @@
 .sidebar-logo {
   background-color: #FFFFFF;
 }
+
+.twitter-share-plug {
+  font-variant-caps: small-caps;
+  font-size: smaller;
+  float:right;
+}
