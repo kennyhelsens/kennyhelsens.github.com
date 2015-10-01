@@ -26,3 +26,6 @@ Today, I want to focus again on projects in biology/biotech/life-science. I feel
 This blog is being shared on [R-bloggers](http://www.r-bloggers.com/)
 
 [Lets get in touch!](mailto:kenny@thinkdata.be)
+
+[ThinkData BVBA](https://data.be/en/company/Thinkdata-SCS-0533840686)
+
